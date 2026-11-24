@@ -1,4 +1,9 @@
+import browser from "webextension-polyfill";
+import { SettingsIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { isActiveFor, type Settings } from "@/lib/settings";
 import { HTML_TARGET, type Change } from "@/lib/storage";
+import { useSettings } from "@/lib/useSettings";
 import { usePageSnapshot } from "@/popup/usePageSnapshot";
 
 const formatTime = (ms: number) =>
@@ -27,6 +32,7 @@ function shortUrl(target: string) {
 
 export function Popup() {
   const state = usePageSnapshot();
+  const [settings] = useSettings();
 
   return (
     <main className="w-96 space-y-3 p-4 text-sm">
@@ -49,14 +55,28 @@ export function Popup() {
   );
 }
 
-function PopupBody({ state }: { state: ReturnType<typeof usePageSnapshot> }) {
-  if (state.status === "loading") {
+function PopupBody({
+  state,
+  settings,
+}: {
+  state: ReturnType<typeof usePageSnapshot>;
+  settings: Settings | null;
+}) {
+  if (state.status === "loading" || !settings) {
     return <p className="text-muted-foreground">Loading…</p>;
   }
   if (state.status === "unsupported") {
     return (
       <p className="text-muted-foreground">
         This page can't be tracked. Only http and https pages are supported.
+      </p>
+    );
+  }
+
+  if (!isActiveFor(state.url, settings)) {
+    return (
+      <p className="text-muted-foreground">
+        Change detection is turned off for this website by your URL rules.
       </p>
     );
   }
