@@ -3,6 +3,7 @@ import babel from "@rolldown/plugin-babel";
 import { defineConfig } from "vite";
 import webExtension from "vite-plugin-web-extension";
 import tailwindcss from "@tailwindcss/vite";
+import { fileURLToPath } from "node:url";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -14,4 +15,9 @@ export default defineConfig({
     }),
     tailwindcss(),
   ],
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
+  },
 });
