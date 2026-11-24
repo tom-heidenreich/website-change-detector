@@ -1,6 +1,7 @@
 import browser, { type Runtime } from "webextension-polyfill";
 import { sha256 } from "@/lib/hash";
 import type { Message } from "@/lib/messages";
+import { isActiveFor, loadSettings } from "@/lib/settings";
 import {
   HTML_TARGET,
   pageKey,
@@ -73,11 +74,12 @@ async function handlePageLoaded(
   resources: string[],
   tabId?: number,
 ) {
+  if (!isActiveFor(url, await loadSettings())) return;
+
   const key = pageKey(url);
   const current = await snapshot(url, resources);
   const previous = (await browser.storage.local.get(key))[key] as
-    | PageSnapshot
-    | undefined;
+    PageSnapshot | undefined;
 
   if (previous && previous.hash !== current.hash) {
     current.lastChange = {
