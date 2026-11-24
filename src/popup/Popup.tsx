@@ -30,10 +30,21 @@ export function Popup() {
 
   return (
     <main className="w-96 space-y-3 p-4 text-sm">
-      <h1 className="font-heading text-base font-semibold">
-        Website Change Detector
-      </h1>
-      <PopupBody state={state} />
+      <header className="flex items-center justify-between gap-2">
+        <h1 className="font-heading text-base font-semibold">
+          Website Change Detector
+        </h1>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Settings"
+          title="Settings"
+          onClick={() => void browser.runtime.openOptionsPage()}
+        >
+          <SettingsIcon />
+        </Button>
+      </header>
+      <PopupBody state={state} settings={settings} />
     </main>
   );
 }
