@@ -65,9 +65,9 @@ function RuleEntry({
 
   return (
     <span className="bg-muted p-2 rounded-lg flex flex-row justify-between items-center text-gray-300">
-      <span className="flex flex-row gap-3 items-center font-mono">
+      <span className="flex flex-row gap-3 items-center font-mono overflow-hidden pr-4">
         <Plus size={16} />
-        {rule.pattern}
+        <p className="overflow-hidden">{rule.pattern}</p>
       </span>
       <span className="flex flex-row self-end gap-2">
         <Button
@@ -101,6 +101,7 @@ function NewRuleForm({
       return;
     }
     onSave(pattern.trim());
+    setPattern("");
   };
 
   return (
@@ -131,8 +132,8 @@ function NewRuleForm({
         ) : (
           <FieldDescription>
             Use <code>*</code> as a wildcard. Without a scheme or path, all are
-            matched: <code>example.com</code> matches every page on example.com,{" "}
-            <code>*.example.com</code> its subdomains.
+            matched: <code>example.com</code> matches every page on example.com
+            and www.example.com, <code>*.example.com</code> all subdomains.
           </FieldDescription>
         )}
       </Field>
