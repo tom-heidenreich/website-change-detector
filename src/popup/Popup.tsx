@@ -35,7 +35,7 @@ export function Popup() {
   const { settings } = useSettings();
 
   return (
-    <main className="w-96 space-y-3 p-4 text-sm">
+    <main className="w-96 space-y-3 p-4 text-sm rounded">
       <header className="flex items-center justify-between gap-2">
         <h1 className="font-heading text-base font-semibold">
           Website Change Detector
