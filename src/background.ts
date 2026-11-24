@@ -47,6 +47,11 @@ function pageKey(url: string) {
   return `page:${u.href}`;
 }
 
+function showChangeBadge(tabId: number) {
+  const action = browser.action ?? browser.browserAction;
+  void action.setBadgeText({ text: "!", tabId });
+}
+
 async function handlePageLoaded(
   url: string,
   resources: string[],
@@ -66,6 +71,7 @@ async function handlePageLoaded(
       ),
     ];
     console.log(`Changed: ${url} (tab ${tabId})`, changed);
+    if (tabId) showChangeBadge(tabId);
   }
 
   await browser.storage.local.set({ [key]: current });
