@@ -4,6 +4,7 @@
   "name": "Example Extension",
   "version": "1.0.0",
   "background": {
-    "service_worker": "src/background.ts"
+    "{{chrome}}.service_worker": "src/background.ts",
+    "{{firefox}}.scripts": ["src/background.ts"]
   }
 }
