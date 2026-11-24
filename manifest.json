@@ -7,6 +7,15 @@
     "{{chrome}}.service_worker": "src/background.ts",
     "{{firefox}}.scripts": ["src/background.ts"]
   },
+  "{{chrome}}.permissions": ["storage"],
+  "{{chrome}}.host_permissions": ["<all_urls>"],
+  "{{firefox}}.permissions": ["storage", "<all_urls>"],
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["src/content.ts"]
+    }
+  ],
   "{{chrome}}.action": {
     "default_popup": "src/popup/index.html"
   },
