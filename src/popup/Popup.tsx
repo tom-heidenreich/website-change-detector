@@ -32,7 +32,7 @@ function shortUrl(target: string) {
 
 export function Popup() {
   const state = usePageSnapshot();
-  const [settings] = useSettings();
+  const { settings } = useSettings();
 
   return (
     <main className="w-96 space-y-3 p-4 text-sm">

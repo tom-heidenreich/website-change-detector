@@ -40,5 +40,5 @@ export function useSettings() {
     [settings],
   );
 
-  return [settings, update] as const;
+  return { settings, update } as const;
 }
