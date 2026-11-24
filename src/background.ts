@@ -1,16 +1,12 @@
 import browser, { type Runtime } from "webextension-polyfill";
 import { sha256 } from "@/lib/hash";
 import type { Message } from "@/lib/messages";
-
-export type PageSnapshot = {
-  url: string;
-  /** Combined hash of the HTML and all resource hashes. */
-  hash: string;
-  htmlHash: string;
-  /** Resource URL -> hash, or "error:<reason>" if it could not be fetched. */
-  resources: Record<string, string>;
-  checkedAt: number;
-};
+import {
+  HTML_TARGET,
+  pageKey,
+  type Change,
+  type PageSnapshot,
+} from "@/lib/storage";
 
 /** Fetch a URL and hash its raw response body. */
 async function hashUrl(url: string): Promise<string> {
@@ -23,7 +19,10 @@ async function hashUrl(url: string): Promise<string> {
   }
 }
 
-async function snapshot(url: string, resourceUrls: string[]) {
+async function snapshot(
+  url: string,
+  resourceUrls: string[],
+): Promise<PageSnapshot> {
   const [htmlHash, ...resourceHashes] = await Promise.all([
     hashUrl(url),
     ...resourceUrls.map(hashUrl),
@@ -40,11 +39,28 @@ async function snapshot(url: string, resourceUrls: string[]) {
   return { url, hash, htmlHash, resources, checkedAt: Date.now() };
 }
 
-/** Storage key for a page: the URL without its #fragment. */
-function pageKey(url: string) {
-  const u = new URL(url);
-  u.hash = "";
-  return `page:${u.href}`;
+function compare(previous: PageSnapshot, current: PageSnapshot): Change[] {
+  const changes: Change[] = [];
+  const kindOf = (before?: string, after?: string): Change["kind"] | null => {
+    if (before === after) return null;
+    if (before === undefined) return "added";
+    if (after === undefined) return "removed";
+    if (after.startsWith("error:")) return "failed";
+    return "modified";
+  };
+
+  const htmlKind = kindOf(previous.htmlHash, current.htmlHash);
+  if (htmlKind) changes.push({ target: HTML_TARGET, kind: htmlKind });
+
+  const urls = new Set([
+    ...Object.keys(previous.resources),
+    ...Object.keys(current.resources),
+  ]);
+  for (const url of urls) {
+    const kind = kindOf(previous.resources[url], current.resources[url]);
+    if (kind) changes.push({ target: url, kind });
+  }
+  return changes;
 }
 
 function showChangeBadge(tabId: number) {
@@ -64,14 +80,14 @@ async function handlePageLoaded(
     | undefined;
 
   if (previous && previous.hash !== current.hash) {
-    const changed = [
-      ...(previous.htmlHash !== current.htmlHash ? ["(html)"] : []),
-      ...Object.keys({ ...previous.resources, ...current.resources }).filter(
-        (r) => previous.resources[r] !== current.resources[r],
-      ),
-    ];
-    console.log(`Changed: ${url} (tab ${tabId})`, changed);
+    current.lastChange = {
+      detectedAt: current.checkedAt,
+      comparedTo: previous.checkedAt,
+      changes: compare(previous, current),
+    };
     if (tabId) showChangeBadge(tabId);
+  } else {
+    current.lastChange = previous?.lastChange;
   }
 
   await browser.storage.local.set({ [key]: current });
@@ -81,7 +97,6 @@ browser.runtime.onMessage.addListener(
   (raw: unknown, sender: Runtime.MessageSender) => {
     const message = raw as Message;
     if (message.type === "page-loaded") {
-      // sender.tab is the tab the content script runs in.
       void handlePageLoaded(message.url, message.resources, sender.tab?.id);
     }
   },
