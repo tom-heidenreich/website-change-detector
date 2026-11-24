@@ -30,18 +30,32 @@ export async function saveSettings(settings: Settings) {
  * - `*` matches any characters.
  * - Without a scheme, any scheme matches: `example.com` → `*://example.com`.
  * - Without a path, any path matches: `example.com` → `example.com/*`.
+ * - A plain host also matches its `www.` subdomain: `example.com` matches
+ *   `www.example.com`. Not added if the host starts with `*` or `www.`.
  */
 export function patternToRegExp(pattern: string): RegExp {
   let p = pattern.trim();
   if (!p.includes("://")) p = `*://${p}`;
-  const afterScheme = p.slice(p.indexOf("://") + 3);
-  if (!afterScheme.includes("/")) p = `${p}/*`;
+  const schemeEnd = p.indexOf("://");
+  const scheme = p.slice(0, schemeEnd);
+  let rest = p.slice(schemeEnd + 3);
+  if (!rest.includes("/")) rest = `${rest}/*`;
 
-  const source = p
-    .split("*")
-    .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
-    .join(".*");
+  const implicitWww = !rest.startsWith("*") && !/^www\./i.test(rest);
+  const source =
+    globToRegExpSource(scheme) +
+    ":\\/\\/" +
+    (implicitWww ? "(?:www\\.)?" : "") +
+    globToRegExpSource(rest);
   return new RegExp(`^${source}$`, "i");
+}
+
+/** Escape regex characters and turn `*` into `.*`. */
+function globToRegExpSource(glob: string) {
+  return glob
+    .split("*")
+    .map((part) => part.replace(/[.+?^${}()|[\]\\/]/g, "\\$&"))
+    .join(".*");
 }
 
 /** Returns an error message, or null if the pattern is valid. */
